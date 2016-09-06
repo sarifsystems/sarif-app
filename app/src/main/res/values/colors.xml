@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="sarifEmph">#ff63029d</color>
+    <color name="sarifDarkPrimary">#0288D1</color>
+    <color name="sarifPrimary">#03A9F4</color>
+    <color name="sarifLightPrimary">#B3E5FC</color>
+    <color name="sarifIcons">#FFFFFF</color>
+    <color name="sarifAccent">#FF5252</color>
+    <color name="sarifPrimaryText">#212121</color>
+    <color name="sarifSecondaryText">#727272</color>
+    <color name="sarifDivider">#B6B6B6</color>
+</resources>

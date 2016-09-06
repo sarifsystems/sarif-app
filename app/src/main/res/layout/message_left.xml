@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:layout_width="match_parent" android:layout_height="wrap_content"
+android:padding="10dp">
+
+<RelativeLayout
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_marginRight="40dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/txtSender"
+        android:layout_alignParentTop="true"
+        android:textSize="16sp"
+        android:singleLine="true"
+        android:layout_alignParentLeft="true"
+        android:paddingLeft="10dp"
+        android:paddingBottom="6dp"
+        android:text="Sender" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/txtDate"
+        android:layout_alignParentRight="true"
+        android:layout_alignBottom="@+id/txtSender"
+        android:textSize="12sp"
+        android:textColor="@color/sarifDarkPrimary"
+        android:paddingBottom="6dp"
+        android:paddingRight="2dp"
+        android:text="12:00" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="New Text"
+        android:id="@+id/txtMessage"
+        android:textSize="14sp"
+        android:textColor="@android:color/white"
+        android:layout_below="@+id/txtSender"
+        android:background="@color/sarifDarkPrimary"
+        android:padding="12dp"
+        android:paddingLeft="24dp" />
+</RelativeLayout>
+</RelativeLayout>
