@@ -14,20 +14,23 @@ public class Message {
 
     public JSONObject payload;
 
-    public static Message decode(String json) throws JSONException {
+    public void unmarshal(String json) throws JSONException {
         JSONObject raw = new JSONObject(json);
+
+        version = raw.getString("sarif");
+        id = raw.getString("id");
+        action = raw.getString("action");
+        source = raw.getString("src");
+
+        destination = raw.optString("dst");
+        corrId = raw.optString("corr");
+        text = raw.optString("text");
+        payload = raw.optJSONObject("p");
+    }
+
+    public static Message decode(String json) throws JSONException {
         Message msg = new Message();
-
-        msg.version = raw.getString("sarif");
-        msg.id = raw.getString("id");
-        msg.action = raw.getString("action");
-        msg.source = raw.getString("src");
-
-        msg.destination = raw.optString("dst");
-        msg.corrId = raw.optString("corr");
-        msg.text = raw.optString("text");
-        msg.payload = raw.optJSONObject("p");
-
+        msg.unmarshal(json);
         return msg;
     }
 

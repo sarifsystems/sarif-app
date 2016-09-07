@@ -24,16 +24,18 @@
                 android:layout_height="wrap_content"
                 />
 
-            <View
+            <LinearLayout
+                android:orientation="vertical"
+                android:id="@+id/message_tiles"
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="4dp"
-                android:background="@android:color/darker_gray"/>
+                android:layout_height="wrap_content">
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/message_info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:textSize="10sp"
                 />
         </LinearLayout>

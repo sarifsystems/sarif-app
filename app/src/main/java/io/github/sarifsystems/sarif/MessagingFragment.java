@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import io.github.sarifsystems.sarif.client.Message;
 import io.github.sarifsystems.sarif.client.SarifClientListener;
+import io.github.sarifsystems.sarif.schema.AnnotatedMessage;
 import io.github.sarifsystems.sarif.service.SarifService;
 
 
@@ -112,12 +113,13 @@ public class MessagingFragment extends Fragment implements SarifClientListener, 
             return;
         }
 
-        Message msg = new Message();
+        AnnotatedMessage msg = new AnnotatedMessage();
+        msg.type = AnnotatedMessage.TYPE_OUTGOING;
         msg.action = "natural/handle";
         msg.text = message;
 
         sarifActivity.getSarif().request(msg, this);
-        messageAdapter.addMessage(msg, MessageAdapter.DIR_OUTGOING);
+        messageAdapter.addMessage(msg);
         messagesList.scrollToPosition(messageAdapter.getItemCount() - 1);
     }
 
@@ -131,7 +133,7 @@ public class MessagingFragment extends Fragment implements SarifClientListener, 
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                messageAdapter.addMessage(msg, MessageAdapter.DIR_INCOMING);
+                messageAdapter.addMessage(new AnnotatedMessage(msg));
                 messagesList.scrollToPosition(messageAdapter.getItemCount() - 1);
             }
         });
