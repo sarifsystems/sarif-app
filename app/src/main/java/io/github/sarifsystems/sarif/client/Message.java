@@ -17,10 +17,10 @@ public class Message {
     public void unmarshal(String json) throws JSONException {
         JSONObject raw = new JSONObject(json);
 
-        version = raw.getString("sarif");
-        id = raw.getString("id");
-        action = raw.getString("action");
-        source = raw.getString("src");
+        version = raw.optString("sarif");
+        id = raw.optString("id");
+        action = raw.optString("action");
+        source = raw.optString("src");
 
         destination = raw.optString("dst");
         corrId = raw.optString("corr");

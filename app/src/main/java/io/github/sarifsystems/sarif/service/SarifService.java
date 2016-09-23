@@ -2,9 +2,11 @@ package io.github.sarifsystems.sarif.service;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -33,9 +35,15 @@ public class SarifService extends Service implements SarifClientListener {
 
     @Override
     public void onCreate() {
-        client = new SarifClient("android", this);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String host = prefs.getString("pref_host", "");
         try {
-            client.connect();
+            client = new SarifClient("android", this);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            client.connect(host);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -106,6 +114,7 @@ public class SarifService extends Service implements SarifClientListener {
     }
 
     public void onConnected() {
+        Log.d("SarifService", "onConnected");
         subscribe("self", null);
         for (SarifClientListener listener : listeners) {
             listener.onConnected();

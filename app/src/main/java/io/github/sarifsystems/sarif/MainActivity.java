@@ -80,7 +80,6 @@ public class MainActivity extends SarifAwareActivity
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
@@ -95,8 +94,10 @@ public class MainActivity extends SarifAwareActivity
 
         Fragment fragment = null;
         Class fragmentClass = null;
-        if (id == R.id.nav_camera) {
+        if (id == R.id.nav_chat) {
             fragmentClass = MessagingFragment.class;
+        } else if (id == R.id.nav_settings) {
+            fragmentClass = SettingsFragment.class;
         }
 
         try {

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -125,7 +126,9 @@ public class MessagingFragment extends Fragment implements SarifClientListener, 
 
     @Override
     public void onConnected() {
-
+        Message msg = new Message();
+        msg.text = "<connected>";
+        onMessageReceived(msg);
     }
 
     @Override
@@ -141,6 +144,8 @@ public class MessagingFragment extends Fragment implements SarifClientListener, 
 
     @Override
     public void onConnectionLost(Exception e) {
-
+        Message msg = new Message();
+        msg.text = "<connection lost>";
+        onMessageReceived(msg);
     }
 }

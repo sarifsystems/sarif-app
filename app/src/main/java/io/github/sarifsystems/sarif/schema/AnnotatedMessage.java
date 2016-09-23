@@ -33,7 +33,6 @@ public class AnnotatedMessage extends Message {
 
         try {
             unmarshal(msg.encode());
-            Log.d("Sarif", msg.encode());
             parsePayload();
         } catch (JSONException e) {
             e.printStackTrace();
@@ -41,20 +40,15 @@ public class AnnotatedMessage extends Message {
     }
 
     public void parsePayload() {
-        Log.d("Sarif", "payload?");
         if (payload == null) {
             return;
         }
 
-        Log.d("Sarif", "payload found");
-
         if (payload.has("attachments")) {
             Gson gson = new GsonBuilder().create();
-            Log.d("Sarif", "attachments");
             try {
                 Attachment[] a = gson.fromJson(payload.getJSONArray("attachments").toString(), Attachment[].class);
                 attachments = Arrays.asList(a);
-                Log.d("Sarif", "attachments num " + attachments.size());
             } catch (JSONException e) {
                 e.printStackTrace();
             }

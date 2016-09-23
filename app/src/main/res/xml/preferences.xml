@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:key="pref_host"
+        android:title="@string/pref_host"
+        android:summary="@string/pref_host_sum"
+        android:defaultValue=""
+        android:hint="tls://my-host.com?auth=mytoken"
+        android:inputType="textWebEmailAddress"
+        />
+</PreferenceScreen>
