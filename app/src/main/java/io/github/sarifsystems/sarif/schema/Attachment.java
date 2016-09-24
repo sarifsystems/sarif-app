@@ -18,4 +18,20 @@ public class Attachment {
     public String footer;
     public String footerIcon;
     public int ts;
+
+    public String authorMarkup() {
+        String name = authorName;
+        if (name != null && authorLink != null && !authorLink.isEmpty()) {
+            name = "<a href=\"" + authorLink + "\">" + name + "</a>";
+        }
+        return name;
+    }
+
+    public String titleMarkup() {
+        String name = title;
+        if (name != null && titleLink != null && !titleLink.isEmpty()) {
+            name = "<a href=\"" + titleLink + "\">" + name + "</a>";
+        }
+        return name;
+    }
 }

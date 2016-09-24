@@ -56,6 +56,8 @@ public class SarifAwareActivity extends AppCompatActivity {
                 sarif.addListener(listener);
             }
             listenerQueue.clear();
+
+            sarif.connect();
         }
 
         @Override

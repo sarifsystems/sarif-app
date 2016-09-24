@@ -35,18 +35,12 @@ public class SarifService extends Service implements SarifClientListener {
 
     @Override
     public void onCreate() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String host = prefs.getString("pref_host", "");
         try {
             client = new SarifClient("android", this);
         } catch(Exception e) {
             e.printStackTrace();
         }
-        try {
-            client.connect(host);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        connect();
     }
 
     @Override
@@ -62,6 +56,17 @@ public class SarifService extends Service implements SarifClientListener {
     @Override
     public IBinder onBind(Intent intent) {
         return new SarifServiceBinder(this);
+    }
+
+    public void connect() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String host = prefs.getString("pref_host", "");
+
+        try {
+            client.connect(host);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void publish(Message msg) {

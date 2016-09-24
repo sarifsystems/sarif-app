@@ -28,11 +28,19 @@
         android:textStyle="bold"
         />
 
+    <ImageView
+        android:id="@+id/attach_image"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        />
+
     <TextView
         android:id="@+id/attach_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="This is the text content."
+        android:autoLink="web"
         />
 
     <TextView
@@ -41,5 +49,6 @@
         android:layout_height="wrap_content"
         android:text="Footer"
         android:textSize="10sp"
+        android:autoLink="web"
         />
 </LinearLayout>
