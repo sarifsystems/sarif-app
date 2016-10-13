@@ -53,4 +53,11 @@ public class Message {
     public boolean isAction(String action) {
         return (this.action + "/").startsWith(action + "/");
     }
+
+    public String getText() {
+        if (text == null || text.isEmpty()) {
+            return action + "from " + source;
+        }
+        return text;
+    }
 }

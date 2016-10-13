@@ -17,6 +17,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.List;
+
 import io.github.sarifsystems.sarif.client.Message;
 import io.github.sarifsystems.sarif.client.SarifClientListener;
 import io.github.sarifsystems.sarif.schema.AnnotatedMessage;
@@ -99,13 +101,22 @@ public class MessagingFragment extends Fragment implements SarifClientListener, 
             throw new RuntimeException(context.toString()
                     + " must extend SarifAwareActivity");
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
         sarifActivity.addSarifListener(this);
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+        sarifActivity.removeListener(this);
+    }
+
     public void onDetach() {
         super.onDetach();
-        sarifActivity.removeListener(this);
         sarifActivity = null;
     }
 
@@ -129,6 +140,12 @@ public class MessagingFragment extends Fragment implements SarifClientListener, 
         Message msg = new Message();
         msg.text = "<connected>";
         onMessageReceived(msg);
+
+        List<Message> messages = sarifActivity.getSarif().getUnhandledMessages();
+        for (Message unhandled : messages) {
+            onMessageReceived(unhandled);
+        }
+        sarifActivity.getSarif().clearUnhandledMessages();
     }
 
     @Override

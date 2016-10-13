@@ -25,7 +25,7 @@ public class SarifAwareActivity extends AppCompatActivity {
         Context ctx = getApplicationContext();
         Intent i = new Intent(ctx, SarifService.class);
         ctx.startService(i);
-        ctx.bindService(i, new SarifServiceConnection(), Context.BIND_AUTO_CREATE);
+        ctx.bindService(i, new SarifServiceConnection(), 0);
     }
 
     public SarifService getSarif() {

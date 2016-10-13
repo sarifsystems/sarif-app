@@ -12,9 +12,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -23,8 +21,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -33,6 +29,7 @@ public class SarifClient {
     protected String deviceId;
     protected String hostUrl;
 
+    protected boolean isConnecting;
     protected Socket connection;
     protected BufferedReader in;
     protected BufferedWriter out;
@@ -48,8 +45,15 @@ public class SarifClient {
 
     public void connect(String hostUrl) throws IOException {
         if (isConnected()) {
+            Message keepAlive = new Message();
+            keepAlive.action = "$keepalive";
+            pubQueue.add(keepAlive);
             return;
         }
+        if (isConnecting) {
+            return;
+        }
+        isConnecting = true;
 
         this.hostUrl = hostUrl;
         Thread t = new Thread(new Runnable() {
@@ -58,6 +62,7 @@ public class SarifClient {
                 try {
                     SarifClient.this.doConnect();
                 } catch (Exception e) {
+                    isConnecting = false;
                     disconnect(e);
                     return;
                 }
@@ -80,9 +85,13 @@ public class SarifClient {
         while (true) {
             try {
                 Message msg = pubQueue.take();
-                String raw = msg.encode();
-                out.write(raw);
-                out.newLine();
+                if (msg.isAction("$keepalive")) {
+                    out.write(" ");
+                } else {
+                    String raw = msg.encode();
+                    out.write(raw);
+                    out.newLine();
+                }
                 out.flush();
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -165,20 +174,17 @@ public class SarifClient {
     }
 
     protected void doConnect() throws Exception {
-        Log.d("SarifClient", "uh, hi");
         Uri host = Uri.parse(hostUrl);
         
         boolean tls = false;
         if (host.getScheme().contains("tls")) {
             tls = true;
         }
-        Log.d("SarifClient", "one step further");
         InetAddress addr = InetAddress.getByName(host.getHost());
         int port = host.getPort();
         if (port <= 0) {
             port = (tls ? 23443 : 23100);
         }
-        Log.d("SarifClient", "connecting to " + addr + ":" + port);
         if (tls) {
             // TODO: Oh god, yes, we seriously need to fix this
             TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
@@ -202,6 +208,7 @@ public class SarifClient {
         } else {
             connection = new Socket(addr, port);
         }
+        isConnecting = false;
 
         in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
         out = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
@@ -223,6 +230,12 @@ public class SarifClient {
         try {
             while (true) {
                 String line = in.readLine();
+                if (line == null) {
+                    throw new IOException("EOF received");
+                }
+                if (line.isEmpty() || line.equals(" ")) {
+                    continue;
+                }
                 Message msg = Message.decode(line);
                 if (listener != null) {
                     listener.onMessageReceived(msg);
