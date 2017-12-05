@@ -14,6 +14,11 @@ public class Message {
 
     public JSONObject payload;
 
+    public Message() {}
+    public Message(String action) {
+        this.action = action;
+    }
+
     public void unmarshal(String json) throws JSONException {
         JSONObject raw = new JSONObject(json);
 

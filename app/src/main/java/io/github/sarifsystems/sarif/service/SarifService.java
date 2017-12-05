@@ -15,7 +15,10 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import com.google.firebase.iid.FirebaseInstanceId;
+
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,6 +34,7 @@ import io.github.sarifsystems.sarif.client.SarifClientListener;
 
 public class SarifService extends Service implements SarifClientListener {
 
+    protected String deviceId;
     protected SarifClient client;
     protected List<SarifClientListener> listeners;
     private Map<String, MessageReceiver> requests = new HashMap<>();
@@ -45,7 +49,7 @@ public class SarifService extends Service implements SarifClientListener {
 
     @Override
     public void onCreate() {
-        client = new SarifClient("android", this);
+        client = new SarifClient(getDeviceId(), this);
     }
 
     @Override
@@ -62,7 +66,21 @@ public class SarifService extends Service implements SarifClientListener {
 
     @Override
     public IBinder onBind(Intent intent) {
-        return new SarifServiceBinder(this);
+        return new SarifServiceBinder();
+    }
+
+    public String getDeviceId() {
+        if (this.deviceId != null) {
+            return this.deviceId;
+        }
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        this.deviceId = prefs.getString("pref_device_id", "");
+        if (this.deviceId.equals("")) {
+            this.deviceId = "android/" + SarifClient.generateId();
+            prefs.edit().putString("pref_device_id", this.deviceId).commit();
+        }
+        return this.deviceId;
     }
 
     public void connect() {
@@ -140,6 +158,15 @@ public class SarifService extends Service implements SarifClientListener {
         Log.d("SarifService", "onConnected");
         subscribe("self", null);
 
+        try {
+            Message msg = new Message("push/register");
+            msg.payload = new JSONObject();
+            msg.payload.putOpt("token", FirebaseInstanceId.getInstance().getToken());
+            publish(msg);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         AlarmManager alarm = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(this, WakefulReceiver.class);
         PendingIntent alarmIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
@@ -177,6 +204,16 @@ public class SarifService extends Service implements SarifClientListener {
             return;
         }
 
+        if (msg.isAction("proto/ping")) {
+            Message reply = new Message("proto/ack");
+            try {
+                client.reply(msg, reply);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+
         Log.d(TAG, "num receivers: " + listeners.size());
         for (SarifClientListener listener : listeners) {
             listener.onMessageReceived(msg);
@@ -201,14 +238,8 @@ public class SarifService extends Service implements SarifClientListener {
     }
 
     public class SarifServiceBinder extends Binder {
-        private SarifService service;
-
-        public SarifServiceBinder(SarifService service) {
-            this.service = service;
-        }
-
         public SarifService getService() {
-            return service;
+            return SarifService.this;
         }
     }
 

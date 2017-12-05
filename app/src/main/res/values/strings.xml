@@ -11,4 +11,6 @@
     <string name="title_activity_cards">CardsActivity</string>
     <string name="pref_host">Server URL</string>
     <string name="pref_host_sum">Full connection URL of server</string>
+    <string name="pref_device_id">Device ID</string>
+    <string name="pref_device_id_sum">Unique name of the device</string>
 </resources>

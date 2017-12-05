@@ -16,53 +16,23 @@ import io.github.sarifsystems.sarif.service.SarifService;
 
 public class SarifAwareActivity extends AppCompatActivity {
 
-    private SarifService sarif;
-    private List<SarifClientListener> listenerQueue = new ArrayList<>();
+    private SarifServiceConnector sarif;
 
     protected void onResume() {
         super.onResume();
 
-        Context ctx = getApplicationContext();
-        Intent i = new Intent(ctx, SarifService.class);
-        ctx.startService(i);
-        ctx.bindService(i, new SarifServiceConnection(), 0);
+        sarif = new SarifServiceConnector(getApplicationContext());
     }
 
     public SarifService getSarif() {
-        return sarif;
+        return this.sarif.getSarif();
     }
 
     public void addSarifListener(SarifClientListener listener) {
-        if (sarif != null) {
-            sarif.addListener(listener);
-        } else {
-            listenerQueue.add(listener);
-        }
+        sarif.addListener(listener);
     }
 
     public void removeListener(SarifClientListener listener) {
-        if (sarif != null) {
-            sarif.removeListener(listener);
-        }
-    }
-
-    public class SarifServiceConnection implements ServiceConnection {
-
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            sarif = ((SarifService.SarifServiceBinder) service).getService();
-
-            for (SarifClientListener listener : listenerQueue) {
-                sarif.addListener(listener);
-            }
-            listenerQueue.clear();
-
-            sarif.connect();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            sarif = null;
-        }
+        this.sarif.removeListener(listener);
     }
 }

@@ -1,7 +1,6 @@
 package io.github.sarifsystems.sarif.client;
 
 import android.net.Uri;
-import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -145,6 +144,16 @@ public class SarifClient {
         }
 
         pubQueue.add(msg);
+    }
+
+    public void reply(Message orig, Message reply) throws IOException, JSONException {
+        if (reply.destination == null) {
+            reply.destination = orig.source;
+        }
+        if (reply.corrId == null) {
+            reply.corrId = orig.id;
+        }
+        publish(reply);
     }
 
     public void subscribe(String device, String action) throws JSONException, IOException {

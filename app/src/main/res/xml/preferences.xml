@@ -8,4 +8,12 @@
         android:hint="tls://my-host.com?auth=mytoken"
         android:inputType="textWebEmailAddress"
         />
+    <EditTextPreference
+        android:key="pref_device_id"
+        android:title="@string/pref_device_id"
+        android:summary="@string/pref_device_id_sum"
+        android:defaultValue=""
+        android:hint="android/12345"
+        android:inputType="textWebEmailAddress"
+        />
 </PreferenceScreen>
