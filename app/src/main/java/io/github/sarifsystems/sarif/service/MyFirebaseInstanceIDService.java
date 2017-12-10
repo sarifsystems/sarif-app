@@ -1,23 +1,13 @@
 package io.github.sarifsystems.sarif.service;
 
-import android.app.Service;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.os.IBinder;
 import android.util.Log;
 
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
+import com.google.gson.JsonObject;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import io.github.sarifsystems.sarif.SarifAwareActivity;
 import io.github.sarifsystems.sarif.SarifServiceConnector;
-import io.github.sarifsystems.sarif.client.Message;
-import io.github.sarifsystems.sarif.client.SarifClientListener;
+import io.github.sarifsystems.sarif.client.SarifMessage;
 
 public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {
 
@@ -32,14 +22,10 @@ public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {
         sarif.runTask(new SarifServiceConnector.Task() {
             @Override
             public void run(SarifService sarif) {
-                try {
-                    Message msg = new Message("push/register");
-                    msg.payload = new JSONObject();
-                    msg.payload.putOpt("token", refreshedToken);
-                    sarif.publish(msg);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                JsonObject p = new JsonObject();
+                p.addProperty("token", refreshedToken);
+                SarifMessage msg = new SarifMessage("push/register", p);
+                sarif.publish(msg);
             }
         });
     }

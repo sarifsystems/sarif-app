@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,15 +12,13 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.List;
 
-import io.github.sarifsystems.sarif.client.Message;
+import io.github.sarifsystems.sarif.client.SarifMessage;
 import io.github.sarifsystems.sarif.client.SarifClientListener;
-import io.github.sarifsystems.sarif.schema.AnnotatedMessage;
+import io.github.sarifsystems.sarif.schema.Message;
 import io.github.sarifsystems.sarif.service.SarifService;
 
 
@@ -125,35 +122,31 @@ public class MessagingFragment extends Fragment implements SarifClientListener, 
             return;
         }
 
-        AnnotatedMessage msg = new AnnotatedMessage();
-        msg.type = AnnotatedMessage.TYPE_OUTGOING;
-        msg.action = "natural/handle";
-        msg.text = message;
+        Message msg = new Message();
+        msg.setType(Message.TYPE_OUTGOING);
+        msg.setAction("natural/handle");
+        msg.setText(message);
 
-        sarifActivity.getSarif().request(msg, this);
+        sarifActivity.getSarif().request(msg.toMessage(), this);
         messageAdapter.addMessage(msg);
         messagesList.scrollToPosition(messageAdapter.getItemCount() - 1);
     }
 
     @Override
     public void onConnected() {
-        Message msg = new Message();
-        msg.text = "<connected>";
-        onMessageReceived(msg);
-
-        List<Message> messages = sarifActivity.getSarif().getUnhandledMessages();
-        for (Message unhandled : messages) {
+        List<SarifMessage> messages = sarifActivity.getSarif().getUnhandledMessages();
+        for (SarifMessage unhandled : messages) {
             onMessageReceived(unhandled);
         }
         sarifActivity.getSarif().clearUnhandledMessages();
     }
 
     @Override
-    public void onMessageReceived(final Message msg) {
+    public void onMessageReceived(final SarifMessage msg) {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                messageAdapter.addMessage(new AnnotatedMessage(msg));
+                messageAdapter.addMessage(new Message(msg));
                 messagesList.scrollToPosition(messageAdapter.getItemCount() - 1);
             }
         });
@@ -161,7 +154,7 @@ public class MessagingFragment extends Fragment implements SarifClientListener, 
 
     @Override
     public void onConnectionLost(Exception e) {
-        Message msg = new Message();
+        SarifMessage msg = new SarifMessage();
         msg.text = "<connection lost>";
         onMessageReceived(msg);
     }

@@ -2,8 +2,7 @@ package io.github.sarifsystems.sarif.client;
 
 import android.net.Uri;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.google.gson.JsonObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -32,7 +31,7 @@ public class SarifClient {
     protected Socket connection;
     protected BufferedReader in;
     protected BufferedWriter out;
-    protected BlockingQueue<Message> pubQueue;
+    protected BlockingQueue<SarifMessage> pubQueue;
 
     protected SarifClientListener listener;
 
@@ -44,7 +43,7 @@ public class SarifClient {
 
     public void connect(String hostUrl) throws IOException {
         if (isConnected()) {
-            Message keepAlive = new Message();
+            SarifMessage keepAlive = new SarifMessage();
             keepAlive.action = "$keepalive";
             pubQueue.add(keepAlive);
             return;
@@ -83,18 +82,16 @@ public class SarifClient {
     private void writeLoop() {
         while (true) {
             try {
-                Message msg = pubQueue.take();
+                SarifMessage msg = pubQueue.take();
                 if (msg.isAction("$keepalive")) {
                     out.write(" ");
                 } else {
-                    String raw = msg.encode();
+                    String raw = SarifMessage.gson.toJson(msg);
                     out.write(raw);
                     out.newLine();
                 }
                 out.flush();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }catch (Exception e) {
+            } catch (Exception e) {
                 this.disconnect(e);
             }
         }
@@ -129,7 +126,7 @@ public class SarifClient {
         return connection != null;
     }
 
-    public void publish(Message msg) throws JSONException, IOException {
+    public void publish(SarifMessage msg) throws IOException {
         if (!isConnected()) {
             throw new IOException("Not connected to Sarif");
         }
@@ -146,7 +143,7 @@ public class SarifClient {
         pubQueue.add(msg);
     }
 
-    public void reply(Message orig, Message reply) throws IOException, JSONException {
+    public void reply(SarifMessage orig, SarifMessage reply) throws IOException {
         if (reply.destination == null) {
             reply.destination = orig.source;
         }
@@ -156,19 +153,17 @@ public class SarifClient {
         publish(reply);
     }
 
-    public void subscribe(String device, String action) throws JSONException, IOException {
+    public void subscribe(String device, String action) throws IOException {
         if (device == null || device.isEmpty()) {
             subscribe("self", action);
         } else if (device.equals("self")) {
             device = deviceId;
         }
 
-        Message msg = new Message();
-        msg.action = "proto/sub";
-        msg.payload = new JSONObject();
-        msg.payload.putOpt("device", device);
-        msg.payload.putOpt("action", action);
-
+        JsonObject p = new JsonObject();
+        p.addProperty("device", device);
+        p.addProperty("action", action);
+        SarifMessage msg = new SarifMessage("proto/sub", p);
         publish(msg);
     }
 
@@ -224,10 +219,9 @@ public class SarifClient {
 
         pubQueue.clear();
 
-        Message msg = new Message();
-        msg.action = "proto/hi";
-        msg.payload = new JSONObject();
-        msg.payload.putOpt("auth", host.getQueryParameter("auth"));
+        JsonObject p = new JsonObject();
+        p.addProperty("auth", host.getQueryParameter("auth"));
+        SarifMessage msg = new SarifMessage("proto/hi", p);
         publish(msg);
 
         if (listener != null) {
@@ -245,7 +239,7 @@ public class SarifClient {
                 if (line.isEmpty() || line.equals(" ")) {
                     continue;
                 }
-                Message msg = Message.decode(line);
+                SarifMessage msg = SarifMessage.gson.fromJson(line, SarifMessage.class);
                 if (listener != null) {
                     listener.onMessageReceived(msg);
                 }

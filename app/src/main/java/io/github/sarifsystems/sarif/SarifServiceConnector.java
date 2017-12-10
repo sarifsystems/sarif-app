@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +68,8 @@ public class SarifServiceConnector {
     public void removeListener(SarifClientListener listener) {
         if (sarif != null) {
             sarif.removeListener(listener);
+        } else {
+            Log.d("SarifServiceConnector", "listener remove failed: no longer bound");
         }
     }
 

@@ -1,39 +1,33 @@
 package io.github.sarifsystems.sarif;
 
-import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
-import android.text.Layout;
 import android.text.method.LinkMovementMethod;
-import android.util.Log;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.github.sarifsystems.sarif.schema.AnnotatedMessage;
+import io.github.sarifsystems.sarif.schema.Message;
 import io.github.sarifsystems.sarif.schema.Attachment;
 
 public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private List<AnnotatedMessage> messages;
+    private List<Message> messages;
 
     public MessageAdapter() {
         messages = new ArrayList<>();
     }
 
-    public void addMessage(AnnotatedMessage message) {
+    public void addMessage(Message message) {
         messages.add(message);
         notifyItemInserted(getItemCount() - 1);
     }
@@ -45,14 +39,14 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     @Override
     public int getItemViewType(int i) {
-        return messages.get(i).type;
+        return messages.get(i).getType();
     }
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
 
-        if (viewType == AnnotatedMessage.TYPE_OUTGOING) {
+        if (viewType == Message.TYPE_OUTGOING) {
             View v = inflater.inflate(R.layout.message_right, parent, false);
             RecyclerView.ViewHolder vh = new MessageViewHolder(v);
             return vh;
@@ -64,14 +58,14 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int i) {
-        AnnotatedMessage msg = messages.get(i);
-        String text = msg.text;
+        Message msg = messages.get(i);
+        String text = msg.getText();
         if (text == null || text.isEmpty()) {
-            text = "." + msg.action;
+            text = "/" + msg.getAction();
         }
 
-        String time = (new SimpleDateFormat("HH:mm")).format(msg.time);
-        if (getItemViewType(i) == AnnotatedMessage.TYPE_OUTGOING) {
+        String time = (new SimpleDateFormat("HH:mm")).format(msg.getTime());
+        if (getItemViewType(i) == Message.TYPE_OUTGOING) {
             MessageViewHolder h = (MessageViewHolder) holder;
             h.messageText.setText(text);
             h.messageInfo.setText(time);

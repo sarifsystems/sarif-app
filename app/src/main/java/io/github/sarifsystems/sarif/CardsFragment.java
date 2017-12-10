@@ -1,14 +1,13 @@
 package io.github.sarifsystems.sarif;
 
 import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import io.github.sarifsystems.sarif.client.Message;
+import io.github.sarifsystems.sarif.client.SarifMessage;
 import io.github.sarifsystems.sarif.client.SarifClientListener;
 
 public class CardsFragment extends Fragment implements SarifClientListener {
@@ -77,7 +76,7 @@ public class CardsFragment extends Fragment implements SarifClientListener {
     }
 
     @Override
-    public void onMessageReceived(Message msg) {
+    public void onMessageReceived(SarifMessage msg) {
 
     }
 

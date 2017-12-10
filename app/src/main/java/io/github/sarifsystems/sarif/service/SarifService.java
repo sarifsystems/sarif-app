@@ -16,19 +16,19 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.google.firebase.iid.FirebaseInstanceId;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.google.gson.JsonObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.github.sarifsystems.sarif.MainActivity;
 import io.github.sarifsystems.sarif.R;
-import io.github.sarifsystems.sarif.client.Message;
+import io.github.sarifsystems.sarif.client.SarifMessage;
 import io.github.sarifsystems.sarif.client.SarifClient;
 import io.github.sarifsystems.sarif.client.SarifClientListener;
 
@@ -36,15 +36,15 @@ public class SarifService extends Service implements SarifClientListener {
 
     protected String deviceId;
     protected SarifClient client;
-    protected List<SarifClientListener> listeners;
+    protected Set<SarifClientListener> listeners;
     private Map<String, MessageReceiver> requests = new HashMap<>();
-    private List<Message> unhandledMessages = new ArrayList<>();
+    private List<SarifMessage> unhandledMessages = new ArrayList<>();
     private int numRetries = 0;
 
     private static final String TAG = "SarifService";
 
     public SarifService() {
-        listeners = new ArrayList<SarifClientListener>();
+        listeners = new HashSet<SarifClientListener>();
     }
 
     @Override
@@ -78,7 +78,7 @@ public class SarifService extends Service implements SarifClientListener {
         this.deviceId = prefs.getString("pref_device_id", "");
         if (this.deviceId.equals("")) {
             this.deviceId = "android/" + SarifClient.generateId();
-            prefs.edit().putString("pref_device_id", this.deviceId).commit();
+            prefs.edit().putString("pref_device_id", this.deviceId).apply();
         }
         return this.deviceId;
     }
@@ -95,11 +95,9 @@ public class SarifService extends Service implements SarifClientListener {
         }
     }
 
-    public void publish(Message msg) {
+    public void publish(SarifMessage msg) {
         try {
             client.publish(msg);
-        } catch (JSONException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -108,14 +106,12 @@ public class SarifService extends Service implements SarifClientListener {
     public void subscribe(String device, String action) {
         try {
             client.subscribe(device, action);
-        } catch (JSONException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void request(Message msg, MessageReceiver receiver) {
+    public void request(SarifMessage msg, MessageReceiver receiver) {
         if (msg.id == null) {
             msg.id = SarifClient.generateId();
         }
@@ -133,6 +129,7 @@ public class SarifService extends Service implements SarifClientListener {
     }
 
     public void addListener(SarifClientListener listener) {
+        Log.d("SarifService", "add listener " + listener.getClass().getSimpleName());
         listeners.add(listener);
 
         if (client != null && client.isConnected()) {
@@ -140,7 +137,7 @@ public class SarifService extends Service implements SarifClientListener {
         }
     }
 
-    public List<Message> getUnhandledMessages() {
+    public List<SarifMessage> getUnhandledMessages() {
         return new ArrayList<>(unhandledMessages);
     }
 
@@ -149,6 +146,7 @@ public class SarifService extends Service implements SarifClientListener {
     }
 
     public void removeListener(SarifClientListener listener) {
+        Log.d("SarifService", "remove listener " + listener.getClass().getSimpleName());
         listeners.remove(listener);
     }
 
@@ -158,14 +156,10 @@ public class SarifService extends Service implements SarifClientListener {
         Log.d("SarifService", "onConnected");
         subscribe("self", null);
 
-        try {
-            Message msg = new Message("push/register");
-            msg.payload = new JSONObject();
-            msg.payload.putOpt("token", FirebaseInstanceId.getInstance().getToken());
-            publish(msg);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        JsonObject p = new JsonObject();
+        p.addProperty("token", FirebaseInstanceId.getInstance().getToken());
+        SarifMessage msg = new SarifMessage("push/register", p);
+        publish(msg);
 
         AlarmManager alarm = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(this, WakefulReceiver.class);
@@ -198,14 +192,15 @@ public class SarifService extends Service implements SarifClientListener {
         }
     }
 
-    public void onMessageReceived(Message msg) {
+    public void onMessageReceived(SarifMessage msg) {
+        Log.d(TAG, "message received: " + msg);
         if (msg.corrId != null && requests.containsKey(msg.corrId)) {
             requests.get(msg.corrId).onMessageReceived(msg);
             return;
         }
 
         if (msg.isAction("proto/ping")) {
-            Message reply = new Message("proto/ack");
+            SarifMessage reply = new SarifMessage("proto/ack");
             try {
                 client.reply(msg, reply);
             } catch (Exception e) {
@@ -221,20 +216,49 @@ public class SarifService extends Service implements SarifClientListener {
 
         if (listeners.isEmpty()) {
             unhandledMessages.add(msg);
+            updateNotification();
+        }
+    }
 
-            Intent intent = new Intent(this, MainActivity.class);
-            PendingIntent contentIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    protected void updateNotification() {
+        if (unhandledMessages.isEmpty()) {
+            return;
+        }
+
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+        Notification.InboxStyle inbox = new Notification.InboxStyle();
+
+        int i = 1;
+        for (SarifMessage msg : unhandledMessages) {
+            inbox.addLine(msg.getText());
 
             Notification n = new Notification.Builder(this)
-                    .setContentTitle("New Sarif message")
-                    .setContentText(msg.getText())
-                    .setContentIntent(contentIntent)
+                    .setContentTitle(msg.getText())
                     .setSmallIcon(R.drawable.ic_stat_cat_silhouette)
-                    .setAutoCancel(true)
+                    .setGroup("messages")
+                    .setGroupSummary(false)
                     .build();
-            NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            nm.notify(0, n);
+
+            manager.notify(i, n);
+            i++;
         }
+        Log.d("SarifService", "showing " + i + " notifications");
+
+        Notification n = new Notification.Builder(this)
+                .setContentTitle("Sarif")
+                .setContentText("To Do")
+                .setStyle(inbox)
+                .setContentIntent(contentIntent)
+                .setSmallIcon(R.drawable.ic_stat_cat_silhouette)
+                .setAutoCancel(true)
+                .setGroupSummary(true)
+                .setGroup("messages")
+                .build();
+
+        manager.notify(0, n);
     }
 
     public class SarifServiceBinder extends Binder {
@@ -244,6 +268,6 @@ public class SarifService extends Service implements SarifClientListener {
     }
 
     public interface MessageReceiver {
-        public void onMessageReceived(Message msg);
+        public void onMessageReceived(SarifMessage msg);
     }
 }
