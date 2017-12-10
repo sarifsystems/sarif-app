@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -119,7 +120,7 @@ public class SarifService extends Service implements SarifClientListener {
         publish(msg);
 
         final String id = msg.id;
-        final Handler h = new Handler();
+        final Handler h = new Handler(Looper.getMainLooper());
         h.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -159,7 +160,7 @@ public class SarifService extends Service implements SarifClientListener {
         JsonObject p = new JsonObject();
         p.addProperty("token", FirebaseInstanceId.getInstance().getToken());
         SarifMessage msg = new SarifMessage("push/register", p);
-        publish(msg);
+        request(msg, null);
 
         AlarmManager alarm = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(this, WakefulReceiver.class);
@@ -195,7 +196,10 @@ public class SarifService extends Service implements SarifClientListener {
     public void onMessageReceived(SarifMessage msg) {
         Log.d(TAG, "message received: " + msg);
         if (msg.corrId != null && requests.containsKey(msg.corrId)) {
-            requests.get(msg.corrId).onMessageReceived(msg);
+            MessageReceiver receiver = requests.get(msg.corrId);
+            if (receiver != null) {
+                receiver.onMessageReceived(msg);
+            }
             return;
         }
 
@@ -214,29 +218,34 @@ public class SarifService extends Service implements SarifClientListener {
             listener.onMessageReceived(msg);
         }
 
-        if (listeners.isEmpty()) {
+        if (listeners.isEmpty() && msg.text != null && !msg.text.isEmpty()) {
             unhandledMessages.add(msg);
             updateNotification();
         }
     }
 
     protected void updateNotification() {
+        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
         if (unhandledMessages.isEmpty()) {
+            manager.cancelAll();
             return;
         }
 
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
         Notification.InboxStyle inbox = new Notification.InboxStyle();
 
         int i = 1;
+        String last = "";
         for (SarifMessage msg : unhandledMessages) {
             inbox.addLine(msg.getText());
+            last = msg.getText();
 
             Notification n = new Notification.Builder(this)
                     .setContentTitle(msg.getText())
+                    .setContentIntent(contentIntent)
                     .setSmallIcon(R.drawable.ic_stat_cat_silhouette)
                     .setGroup("messages")
                     .setGroupSummary(false)
@@ -249,7 +258,7 @@ public class SarifService extends Service implements SarifClientListener {
 
         Notification n = new Notification.Builder(this)
                 .setContentTitle("Sarif")
-                .setContentText("To Do")
+                .setContentText(last)
                 .setStyle(inbox)
                 .setContentIntent(contentIntent)
                 .setSmallIcon(R.drawable.ic_stat_cat_silhouette)
